@@ -1,0 +1,238 @@
+# data_clean_functions
+# Descriptions : A more general data cleaning function package
+
+# Update status_val ============================================================
+
+## update_status_val -----------------------------------------------------------
+
+update_status_val <- function(sample_df, info_list, cat, rc) {
+  if (rc == "col") {
+    sample_df <-
+      sample_df %>%
+      left_join(
+        sample_df %>%
+          filter(tableid %in% (info_list[[cat]]$target %>%
+                                 filter(ncol == 1) %>% # Use col
+                                 pull(tableid) %>% unique)) %>%
+          filter(status_val == cat) %>%
+          select(tableid, col) %>% # Use col
+          set_colnames(c("tableid", "temp_target")) %>% unique,
+        by = c("tableid")) %>%
+      mutate(status_val =
+               ifelse(temp_target %>%
+                        is.na %>% not & col == temp_target, # Use col
+                      cat, status_val)) %>%
+      select(-temp_target)
+  } else if (rc == "row") {
+    sample_df <-
+      sample_df %>%
+      left_join(
+        sample_df %>%
+          filter(tableid %in% (info_list[[cat]]$target %>%
+                                 filter(nrow == 1) %>% # Use row
+                                 pull(tableid) %>% unique)) %>%
+          filter(status_val == cat) %>%
+          select(tableid, row) %>% # Use row
+          set_colnames(c("tableid", "temp_target")) %>% unique,
+        by = c("tableid")) %>%
+      mutate(status_val =
+               ifelse(temp_target %>%
+                        is.na %>% not & row == temp_target, # Use row
+                      cat, status_val)) %>%
+      select(-temp_target)
+  }
+  return(sample_df)
+}
+
+# update_status_val_weak -------------------------------------------------------
+
+update_status_val_weak <- function(sample_df, info_list, cat, rc) {
+  if (rc == "col") {
+    sample_df <-
+      sample_df %>%
+      left_join(
+        sample_df %>%
+          filter(tableid %in% (info_list[[cat]]$target %>%
+                                 filter(ncol == 1) %>% # Use col
+                                 pull(tableid) %>% unique)) %>%
+          filter(status_val == cat) %>%
+          select(tableid, col) %>% # Use col
+          set_colnames(c("tableid", "temp_target")) %>% unique,
+        by = c("tableid")) %>%
+      mutate(status_val =
+               ifelse(temp_target %>%
+                        is.na %>% not & col == temp_target & is.na(status_val), # Use col
+                      cat, status_val)) %>%
+      select(-temp_target)
+  } else if (rc == "row") {
+    sample_df <-
+      sample_df %>%
+      left_join(
+        sample_df %>%
+          filter(tableid %in% (info_list[[cat]]$target %>%
+                                 filter(nrow == 1) %>% # Use row
+                                 pull(tableid) %>% unique)) %>%
+          filter(status_val == cat) %>%
+          select(tableid, row) %>% # Use row
+          set_colnames(c("tableid", "temp_target")) %>% unique,
+        by = c("tableid")) %>%
+      mutate(status_val =
+               ifelse(temp_target %>%
+                        is.na %>% not & row == temp_target & is.na(status_val), # Use row
+                      cat, status_val)) %>%
+      select(-temp_target)
+  }
+  return(sample_df)
+}
+
+## check_update_status_val -----------------------------------------------------
+# 13_find_data_use
+
+check_update_status_val <- function(sample_df, info_list, cat, rc) {
+  # within sample_df, check how many of the problematic observations there are
+  if (rc == "col") {
+    temp_use <-
+      sample_df %>%
+      left_join(
+        sample_df %>%
+          filter(tableid %in% (info_list[[cat]]$target %>%
+                                 filter(ncol == 1) %>% # Use row
+                                 pull(tableid) %>% unique)) %>%
+          filter(status_val == cat) %>%
+          select(tableid, col) %>% # Use row
+          set_colnames(c("tableid", "temp_target")) %>% unique,
+        by = c("tableid")) %>%
+      filter(temp_target %>% is.na %>% not)
+
+    # See if in the row/col, there is already a value assigned to other cat
+    temp_return <-
+      temp_use %>%
+      filter(col == temp_target) %>%
+      filter(status_val %in% setdiff(c("fcat", "fnm", "vnm"), cat))
+  } else if (rc == "row") {
+    temp_use <-
+      sample_df %>%
+      left_join(
+        sample_df %>%
+          filter(tableid %in% (info_list[[cat]]$target %>%
+                                 filter(nrow == 1) %>% # Use row
+                                 pull(tableid) %>% unique)) %>%
+          filter(status_val == cat) %>%
+          select(tableid, row) %>% # Use row
+          set_colnames(c("tableid", "temp_target")) %>% unique,
+        by = c("tableid")) %>%
+      filter(temp_target %>% is.na %>% not)
+
+    # See if in the row/col, there is already a value assigned to other cat
+    temp_return <-
+      temp_use %>%
+      filter(row == temp_target) %>%
+      filter(status_val %in% setdiff(c("fcat", "fnm", "vnm"), cat))
+  }
+}
+
+# clean_firmname ---------------------------------------------------------------
+
+#' load data with a given name
+#'
+#' @import dplyr
+#' @import magrittr
+#' @import stringr
+#' @export
+
+clean_firmname <- function(vec_fnm, misc_kor = misc_kor_list, ..) { # corp_str_kor will be called from data defined in package
+  corp_str <-
+    c("INC", "CO LTD", "PTE LTD", "PTY LTD", "PRIVATE LIMITED",                 # LimitedLiabilityPartnership
+      "PVT LTD", "PRIVATELIMITED", "PTY", "PT", "P T", "PVT",
+      "PRIVATE LTD", "PRIVATE", "PTE", "LTD", "LIMITED", "LLC", "LTDA",
+      "J S C", "JSC", "JVC", "L P", "LP",
+      "S DE R L DE C V", "S A DE C V", "SA DE CV",
+      "S A E",
+      "S P A", "SPA",
+      "S DE", "SA DE", "DE", "GMBH CO KG", "GMBH",
+      "SDN BHD", "S R O", "SRO", "S R L", "SRL",
+      "KFT", "B V", "BV", "S L U", "SLU",
+      "S A U", "SAU", "N V", "NV", "SAN VE TIC A S",
+      "A S", "AG", "SPOLKA Z O O", "SP Z O O", "SP ZO O", "SP ZO", "CO",
+      "S A R L", "SARL", "S A S", "SAS", "S A", "SA",
+      "FZE", "F Z E", "S L", "JLT")
+
+  tempdf <-
+    vec_fnm %>%
+    as.data.frame(stringsAsFactors = FALSE) %>%
+    set_colnames("original") %>%
+    mutate(vec_new = gsub(paste0("\\-{2,}|\\={2,}|\\\\{1,}|", misc_kor$fnm[1]), "", original)) %>%
+    mutate(vec_new = ifelse(grepl("(= ){2,}", vec_new),
+                          gsub("=", "", vec_new) %>% gsub("\\s+$", "", .),
+                          vec_new)) %>%
+    mutate(vec_new = ifelse(vec_new == "=", "", vec_new)) %>%
+    mutate(vec_new =
+             vec_new %>%
+             gsub("^\\s+|\\s+$", "", .) %>%
+             gsub("\\┐|\\│|\\┘", "", .) %>%
+             gsub("＄", "$", ., fixed = TRUE) %>%
+             gsub("&lt;", "<", ., fixed = TRUE) %>%
+             gsub("&gt;", ">", ., fixed = TRUE) %>%
+             gsub("&amp;", "&", ., fixed = TRUE) %>%
+             gsub("<BR>", " ", ., fixed = TRUE) %>%
+             gsub("^\\s+|\\s+$", "", .) %>%
+             gsub("\\┐|\\│|\\┘", "", .) %>%
+             gsub("&lt;", "<", ., fixed = TRUE) %>%
+             gsub("&gt;", ">", ., fixed = TRUE) %>%
+             gsub("&amp;", "&", ., fixed = TRUE) %>%
+             gsub("<BR>", " ", ., fixed = TRUE)) %>%
+    mutate(vec_new =
+             vec_new %>%
+             gsub(misc_kor$corp[1], misc_kor$corp[2], .) %>%
+             gsub("（", "(", ., fixed = TRUE) %>%
+             gsub("）", ")", ., fixed = TRUE) %>%
+             gsub("［", "(", ., fixed = TRUE) %>%
+             gsub("］", ")", ., fixed = TRUE) %>%
+             gsub("[", "(", ., fixed = TRUE) %>%
+             gsub("]", ")", ., fixed = TRUE) %>%
+             gsub("<", "(", ., fixed = TRUE) %>%
+             gsub(">", ")", ., fixed = TRUE) %>%
+             gsub("{", "(", ., fixed = TRUE) %>%
+             gsub("}", ")", ., fixed = TRUE) %>%
+             gsub(misc_kor$fnm[2], "", .)) %>%
+    mutate(vec_paren =
+             gsub('^\\([^\\(\\)]+\\)(?!$)|^\\((?=.+\\)$)(*SKIP)(*FAIL)|\\((?:[^\\(\\)]|(?R))*\\)',
+                  '', vec_new, perl = TRUE)) %>%
+    mutate(temp_open =
+             ifelse(str_count(vec_paren, "\\(") > str_count(vec_paren, "\\)"),
+                    TRUE, FALSE)) %>%
+    mutate(vec_clean = vec_paren) %>%
+    mutate(vec_clean =
+             ifelse(and(temp_open, !grepl("^\\(", vec_clean)),
+                    gsub("\\(.*", "", vec_clean),
+                    vec_clean)) %>%
+    mutate(vec_clean =
+             ifelse(and(temp_open, grepl("^\\(", vec_clean)),
+                    gsub("^\\(", "", vec_clean),
+                    vec_clean)) %>%
+    mutate(temp_close =
+             ifelse(str_count(vec_clean, "\\(") < str_count(vec_clean, "\\)"),
+                    TRUE, FALSE)) %>%
+    mutate(vec_clean =
+             ifelse(and(temp_close, !grepl("\\)$", vec_clean)),
+                    gsub(".*\\)", "", vec_clean),
+                    vec_clean)) %>%
+    mutate(vec_clean =
+             ifelse(and(temp_close, grepl("\\)$", vec_clean)),
+                    gsub("\\)$", "", vec_clean),
+                    vec_clean)) %>%
+    mutate(vec_clean =
+             gsub("\\,|\\-|\\.", " ", vec_clean) %>%
+             gsub("\\s+", " ", .) %>%
+             gsub(" $", "", .) %>%
+             gsub("^ ", "", .) %>%
+             toupper) %>%
+    mutate(vec_fin =
+             gsub("\\bU S A\\b", "USA", vec_clean) %>%
+             gsub(paste0(paste0("\\b", corp_str, "\\b"), collapse = "|"), "", .) %>%
+             gsub("\\s+", "", .) %>%
+             gsub(paste0(corp_str_kor, collapse = "|"), "", .))
+
+
+  return(tempdf %>% pull(vec_fin))
+}

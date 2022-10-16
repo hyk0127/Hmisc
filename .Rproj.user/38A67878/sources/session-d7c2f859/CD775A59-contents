@@ -1,0 +1,88 @@
+#' Currency units, their values and corresponding strings
+#'
+#' @source from DART temp_tables
+#' @format A data.frame with three columns:
+#' \describe{
+#'  \item{cur}{3-letter abbreviation of the currency name}
+#'  \item{str_cur}{string values that correspond to the currency}
+#'  \item{str_size}{numeric size of the 'cur_str' in that currency}
+#'  \item{val_cur}{value of the currency in KRW}
+#'  \item{val_total}{value of the 'cur_str' in KRW}
+#' }
+#' @examples
+#' \dontrun{
+#' unit_df
+#' }
+"unit_df"
+
+#' Special characters in currency units as a string vector
+#'
+#' @source from DART temp_tables
+#' @examples
+#' \dontrun{
+#' unit_sp
+#' }
+"unit_sp"
+
+#' Currency units that are of a single letter, in Korean, as a string vector
+#'
+#' @source from DART temp_tables
+#' @examples
+#' \dontrun{
+#' unit_one_kr
+#' }
+"unit_one_kr"
+
+#' OPEN DART API - 1
+#'
+#' @source from OPEN DART API website
+#' @examples
+#' \dontrun{
+#' api1
+#' }
+"api1"
+
+#' OPEN DART API - 2
+#'
+#' @source from OPEN DART API website
+#' @examples
+#' \dontrun{
+#' api2
+#' }
+"api2"
+
+#' OPEN DART API - 3
+#'
+#' @source from OPEN DART API website
+#' @examples
+#' \dontrun{
+#' api3
+#' }
+"api3"
+
+#' OPEN DART API - 4
+#'
+#' @source from OPEN DART API website
+#' @examples
+#' \dontrun{
+#' api4
+#' }
+"api4"
+
+#' OPEN DART API - 5
+#'
+#' @source from OPEN DART API website
+#' @examples
+#' \dontrun{
+#' api5
+#' }
+"api5"
+
+#' OPEN DART API - 6
+#'
+#' @source from OPEN DART API website
+#' @examples
+#' \dontrun{
+#' api6
+#' }
+"api6"

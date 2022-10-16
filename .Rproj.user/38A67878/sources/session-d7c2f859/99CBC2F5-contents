@@ -1,0 +1,12 @@
+# data_general
+
+# duplicated_all ---------------------------------------------------------------
+#' Trim a vector below A percent & above B percent
+#' @import magrittr
+#' @import dplyr
+#' @export
+duplicated_all <- function(vec) {
+  vec <-
+    (duplicated(vec, fromLast = TRUE) | duplicated(vec, fromLast = FALSE))
+  return(vec)
+}
